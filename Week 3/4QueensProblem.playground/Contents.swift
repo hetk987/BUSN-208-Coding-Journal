@@ -1,6 +1,6 @@
 var board = Array(repeating: Array(repeating: " ", count: 4), count: 4)
 
-func isValidQueen(row: Int, col: Int, board: [[String]]) -> Bool {
+func isValidQueenSpot(row: Int, col: Int, board: [[String]]) -> Bool {
     let n = board.count
     var count = 0
 
@@ -57,6 +57,37 @@ func isValidQueen(row: Int, col: Int, board: [[String]]) -> Bool {
         j -= 1
     }
     
-    return count == 4 // The queen counts itself in all four checks
+    return count == 0 // The queen counts itself in all four checks
 }
 
+func SolveProblem(col: Int, board: inout [[String]]) -> Bool {
+    if col >= board.count {
+        return true
+    }
+    
+    for i in 0..<board.count {
+        if isValidQueenSpot(row: i, col: col, board: board) {
+            board[i][col] = "Q"
+            
+            if SolveProblem(col: col + 1, board: &board) {
+                return true
+            }
+            board[i][col] = " "
+        }
+    }
+    return false
+}
+
+func printBoard(board:[[String]]) {
+    print("-----------------")
+    for (index, row) in board.enumerated() {
+        print("| \(row.joined(separator: " | ")) |")
+        if index < 3 {
+            print("-----------------")
+        }
+    }
+    print("-----------------")
+}
+
+SolveProblem(col: 0, board: &board)
+printBoard(board: board)
