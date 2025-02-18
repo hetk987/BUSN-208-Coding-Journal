@@ -19,19 +19,19 @@ struct CaravanView: View {
                     ForEach(items, id: \.self) { item in
                         VStack {
                             Image(item) // Use your own custom images
-//                                .resizable()
-//                                .aspectRatio(contentMode: .fit)
-//                                .frame(width: 200, height: 200)
-//                                .cornerRadius(15)
-//                                .shadow(radius: 5)
-//                            Text(item)
-//                                .font(.headline)
-//                                .foregroundColor(.primary)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 200, height: 200)
+                                .cornerRadius(15)
+                                .shadow(radius: 5)
+                            Text(item)
+                                .font(.headline)
+                                .foregroundColor(.primary)
                         }
-//                        .padding()
-//                        .background(Color.white)
-//                        .cornerRadius(20)
-//                        .shadow(radius: 10)
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(20)
+                        .shadow(radius: 10)
                     }
                 }
                 .padding()
