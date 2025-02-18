@@ -15,7 +15,11 @@ struct CaravanView: View {
     var body: some View {
         NavigationView {
             ScrollView(.horizontal, showsIndicators: false) {
-                
+                HStack(spacing: 20) {
+                    ForEach(items, id: \.self) { item in
+                        
+                }
+                .padding()
             }
             .navigationTitle("Caravan View")
         }
