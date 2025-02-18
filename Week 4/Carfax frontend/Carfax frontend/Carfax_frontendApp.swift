@@ -11,7 +11,7 @@ import SwiftUI
 struct Carfax_frontendApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            CaravanView()
         }
     }
 }

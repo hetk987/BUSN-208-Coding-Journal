@@ -7,18 +7,23 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct CaravanView: View {
+    let items = [
+        "Untitled1", "Untitled2", "Untitled" // Your custom image names
+    ]
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationView {
+            ScrollView(.horizontal, showsIndicators: false) {
+                
+            }
+            .navigationTitle("Caravan View")
         }
-        .padding()
     }
 }
 
-#Preview {
-    ContentView()
+struct CaravanView_Previews: PreviewProvider {
+    static var previews: some View {
+        CaravanView()
+    }
 }
