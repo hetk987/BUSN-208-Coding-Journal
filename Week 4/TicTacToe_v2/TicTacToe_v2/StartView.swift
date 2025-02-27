@@ -9,6 +9,7 @@ import SwiftUI
 
 
 struct StartView: View {
+    
     @State private var gameType:GameType = .undetermined
     @State private var name:String = ""
     @State private var opponentName:String = ""
@@ -67,6 +68,9 @@ struct StartView: View {
             }
             .padding()
             .navigationTitle("Tic-Tac-Toe")
+            .fullScreenCover(isPresented: $startGame){
+                // need to put gameview here
+            }
         }
     }
         
@@ -74,6 +78,7 @@ struct StartView: View {
 
 #Preview {
         StartView()
+        .environmentObject(GameService())
     
 }
 

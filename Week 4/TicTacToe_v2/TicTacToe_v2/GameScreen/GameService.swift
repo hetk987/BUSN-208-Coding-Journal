@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 class GameService:ObservableObject{
     @Published var player1 = Player(name:"Player 1", gamePiece: .X)
@@ -13,9 +14,10 @@ class GameService:ObservableObject{
     
     @Published var possibleMoves = Moves.all
     
-    //we need to build the board
     @Published var gameOver = false
     
+    @Published var gameBoard: [GameSquare] = GameSquare.reset
+
     var gameType = GameType.single
     
     var currentPlayer:Player{
@@ -49,5 +51,63 @@ class GameService:ObservableObject{
             break
         }
         player1.name = player1Name
+    }
+    
+    func reset(){
+        
+        player1.isTurn=false
+        player2.isTurn=false
+        
+        player1.moves.removeAll()
+        player2.moves.removeAll()
+        
+        gameOver = false
+        
+        possibleMoves = Moves.all
+        
+        gameBoard = GameSquare.reset
+    }
+    
+    func updateMoves(index: Int){
+        if player1.isTurn {
+            player1.moves.append(index+1)
+            gameBoard[index].player = player1
+        }
+        else{
+            player2.moves.append(index+1)
+            gameBoard[index].player = player2
+        }
+    }
+    
+    func checkIfWinner(){
+        if player1.isWinner() || player2.isWinner() {
+            gameOver = true
+        }
+    }
+    
+    func toggleCurrent(){
+        player1.isTurn.toggle()
+        player2.isTurn.toggle()
+    }
+    
+    func makeMove(at index:Int){
+        if gameBoard[index].player == nil {
+            withAnimation{
+                updateMoves(index:index)
+            }
+            checkIfWinner()
+            
+            if !gameOver{
+                if let matchingIndex = possibleMoves.firstIndex(where: {$0 == (index+1)}){
+                    possibleMoves.remove(at:matchingIndex)
+                }
+                toggleCurrent()
+                
+            }
+            
+            if possibleMoves.isEmpty{
+                gameOver = true
+            }
+        }
     }
 }
