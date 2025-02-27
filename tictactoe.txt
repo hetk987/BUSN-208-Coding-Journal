@@ -1,0 +1,32 @@
+Step 1:
+ - Add all of the assets
+ - Set the asset's settings to make sure that they are usable for our work type
+ - Understand the different types of files provided (swift vs swiftUI)
+
+Step 2: 
+ - Add all of the models
+ - Understand what are the different objects we will need for our project
+  - For this project we used GameType, GamePiece, Moves and Players
+  - The models folder will pretty much hold all of the constant and type information
+  - For our case one of these constant pieces of information was the winning moves. 
+
+Step 3: 
+ - Add the logic of starting the application
+ - Add all of the global variables we may need using @Published
+ - Then add all of the other small variables we may need for game logic
+ - Also add what will happen when different options are selected like the different game types
+
+Step 4:
+ - Creating the actual loading UI
+ - Understand the format and create a framewire either in a professional design or a rough hand drawing
+ - Link variables that were created in the previous steps to the inputs that we will collect such as the player information and the game type. 
+ - Add styling to the application such as background colors, fonts, padding and borders to make the app and the individual components look better. 
+
+Step 5:
+ - Creating the functionality of the actual game
+ - Understand the different outcomes that may happen, such as win, lose, draw and when we would need to check for these.
+ - Also add logic for how the moves will work and when each player gets to go. 
+
+Step 6:
+ - Create the actual tiles and attach the precious step to make it work. 
+ - Fix any bugs and add more styling
