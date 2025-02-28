@@ -69,7 +69,7 @@ struct StartView: View {
             .padding()
             .navigationTitle("Tic-Tac-Toe")
             .fullScreenCover(isPresented: $startGame){
-                // need to put gameview here
+                GameView()
             }
         }
     }

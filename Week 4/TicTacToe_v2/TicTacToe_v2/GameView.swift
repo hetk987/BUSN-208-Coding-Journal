@@ -45,7 +45,7 @@ struct GameView: View {
                             .foregroundColor(.white)
                     }
                 }
-                .disabled(game.gameStart)
+//                .disabled(game.gameStart)
                 .padding()
                 
                 VStack{
@@ -66,7 +66,7 @@ struct GameView: View {
                     }
                 }
             }
-            .disabled(game.boardDisabled)
+//            .disabled(game.boardDisabled)
             
             VStack{
                 if game.gameOver{
