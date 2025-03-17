@@ -62,7 +62,7 @@ class GameService:ObservableObject{
         player2.moves.removeAll()
         
         gameOver = false
-        
+                
         possibleMoves = Moves.all
         
         gameBoard = GameSquare.reset

@@ -9,10 +9,12 @@ import SwiftUI
 
 
 struct StartView: View {
+    @EnvironmentObject var game:GameService
     
     @State private var gameType:GameType = .undetermined
     @State private var name:String = ""
     @State private var opponentName:String = ""
+    
     @FocusState private var focus: Bool
     @State private var startGame = false
     
@@ -56,6 +58,8 @@ struct StartView: View {
                 if gameType != GameType.undetermined{
                     Button("Start Game"){
                         //setup game
+                        game.setupGame(gameType: gameType, player1Name: name, player2Name: opponentName)
+                        
                         focus = false
                         startGame.toggle()
                     }

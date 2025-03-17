@@ -19,34 +19,34 @@ struct GameView: View {
                 }
                 
                 HStack {
-                    Button(action: {
+                    Button(game.player1.name){
                         game.player1.isTurn = true
                         game.player2.isTurn = false
-                    }) {
-                        Text(game.player1.name)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(RoundedRectangle(cornerRadius: 10)
-                                .fill(game.player1.isTurn ? Color.green : Color.gray)
-                            )
-                            .foregroundColor(.white)
+                        print(game.gameStart)
                     }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(RoundedRectangle(cornerRadius: 10)
+                        .fill(game.player1.isTurn ? Color.green : Color.gray)
+                    )
+                    .foregroundColor(.white)
                     
-                    Button(action: {
+                    
+                    Button(game.player2.name){
                         game.player2.isTurn = true
                         game.player1.isTurn = false
-                    }) {
-                        Text(game.player2.name)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(RoundedRectangle(cornerRadius: 10)
-                                .fill(game.player2.isTurn ? Color.green : Color.gray)
-                            )
-                            .foregroundColor(.white)
+                        print(game.gameStart)
                     }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(RoundedRectangle(cornerRadius: 10)
+                        .fill(game.player2.isTurn ? Color.green : Color.gray)
+                    )
+                    .foregroundColor(.white)
                 }
-//                .disabled(game.gameStart)
+                .disabled(game.gameStart)
                 .padding()
+                
                 
                 VStack{
                     HStack{
@@ -65,8 +65,9 @@ struct GameView: View {
                         }
                     }
                 }
+                .disabled(game.boardDisabled)
             }
-//            .disabled(game.boardDisabled)
+           
             
             VStack{
                 if game.gameOver{
@@ -83,8 +84,20 @@ struct GameView: View {
                         game.reset()
                     }
                 }
+            
             }
+            Spacer()
         }
+        .toolbar{
+            ToolbarItem(placement: .topBarTrailing){
+                Button("End Game"){
+                    dismiss()
+                }.buttonStyle(.bordered)
+            }
+        }.navigationTitle("TicTacToe")
+            .onAppear{
+                game.reset()
+            }
     }
 }
 

@@ -17,7 +17,7 @@ struct GameSquare{
             return player.gamePiece.img
         }
         else{
-            return Image("none")
+            return Image("None")
         }
     }
     
