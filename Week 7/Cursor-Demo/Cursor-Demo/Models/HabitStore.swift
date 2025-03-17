@@ -5,6 +5,21 @@ class HabitStore: ObservableObject {
     @Published var habits: [Habit] = []
     private let saveKey = "savedHabits"
     
+    var completedHabitsToday: [Habit] {
+        let today = Calendar.current.startOfDay(for: Date())
+        return habits.filter { habit in
+            if habit.allowsMultipleCompletions {
+                return habit.dailyCompletions[today, default: 0] > 0
+            } else {
+                return habit.completionDates.contains(today)
+            }
+        }
+    }
+    
+    var longestStreak: Int {
+        habits.map { $0.streak }.max() ?? 0
+    }
+    
     init() {
         loadHabits()
         requestNotificationPermission()
@@ -45,13 +60,36 @@ class HabitStore: ObservableObject {
     
     func toggleHabitCompletion(_ habit: Habit) {
         if let index = habits.firstIndex(where: { $0.id == habit.id }) {
-            var updatedHabit = habit
             let today = Calendar.current.startOfDay(for: Date())
+            var updatedHabit = habit
             
-            if updatedHabit.completionDates.contains(today) {
-                updatedHabit.completionDates.remove(today)
+            if habit.allowsMultipleCompletions {
+                let currentCount = habit.dailyCompletions[today, default: 0]
+                if currentCount > 0 {
+                    updatedHabit.dailyCompletions[today] = 0
+                } else {
+                    updatedHabit.dailyCompletions[today] = 1
+                }
             } else {
-                updatedHabit.completionDates.insert(today)
+                if habit.completionDates.contains(today) {
+                    updatedHabit.completionDates.remove(today)
+                } else {
+                    updatedHabit.completionDates.insert(today)
+                }
+            }
+            
+            // Update streak
+            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+            if updatedHabit.completionDates.contains(today) {
+                if updatedHabit.completionDates.contains(yesterday) {
+                    updatedHabit.streak += 1
+                } else {
+                    updatedHabit.streak = 1
+                }
+            } else {
+                if !updatedHabit.completionDates.contains(yesterday) {
+                    updatedHabit.streak = 0
+                }
             }
             
             habits[index] = updatedHabit

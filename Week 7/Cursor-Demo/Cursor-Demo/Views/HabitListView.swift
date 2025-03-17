@@ -6,6 +6,7 @@ struct HabitListView: View {
     @State private var editingHabit: Habit?
     @State private var selectedHabits: Set<UUID> = []
     @State private var selectedCategory: Habit.Category?
+    @State private var showingProfile = false
     
     private var completedHabits: [Habit] {
         let today = Calendar.current.startOfDay(for: Date())
@@ -31,36 +32,115 @@ struct HabitListView: View {
         return habitStore.habits
     }
     
-    private var categories: [Habit.Category] {
-        Array(Set(habitStore.habits.map { $0.category })).sorted { $0.rawValue < $1.rawValue }
+    private var completionPercentage: Int {
+        guard !habitStore.habits.isEmpty else { return 0 }
+        return Int((Double(completedHabits.count) / Double(habitStore.habits.count)) * 100)
     }
+    
+    private var dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM dd"
+        return formatter
+    }()
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        CategoryButton(title: "All", isSelected: selectedCategory == nil) {
-                            selectedCategory = nil
-                        }
-                        
-                        ForEach(categories, id: \.self) { category in
-                            CategoryButton(
-                                title: category.rawValue,
-                                color: Color(hex: category.defaultColor),
-                                isSelected: selectedCategory == category
-                            ) {
-                                selectedCategory = category
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Profile Summary
+                    HStack {
+                        Button(action: { showingProfile = true }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.purple.opacity(0.2))
+                                    .frame(width: 80, height: 80)
+                                
+                                Circle()
+                                    .trim(from: 0, to: Double(completionPercentage) / 100)
+                                    .stroke(Color.purple, lineWidth: 4)
+                                    .frame(width: 80, height: 80)
+                                    .rotationEffect(.degrees(-90))
+                                
+                                Text("\(completionPercentage)%")
+                                    .font(.caption)
+                                    .bold()
                             }
                         }
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Your Progress")
+                                .font(.headline)
+                            Text("\(completedHabits.count) of \(habitStore.habits.count) completed")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.leading)
+                        
+                        Spacer()
                     }
                     .padding(.horizontal)
-                }
-                .padding(.vertical, 8)
-                
-                List {
-                    if !incompleteHabits.isEmpty {
-                        Section(header: Text("Active Habits")) {
+                    
+                    // Header Stats Card
+                    VStack(spacing: 20) {
+                        HStack(spacing: 40) {
+                            StatItem(
+                                icon: "flame.fill",
+                                title: "Streak",
+                                value: "\(habitStore.habits.map { $0.streak }.max() ?? 0)",
+                                iconColor: .orange
+                            )
+                            
+                            StatItem(
+                                icon: "eye.fill",
+                                title: "For review",
+                                value: "\(incompleteHabits.count) habits",
+                                iconColor: .gray
+                            )
+                        }
+                        .padding(.top)
+                        
+                        HStack(spacing: 0) {
+                            ProgressStateView(
+                                state: .done,
+                                title: "Done",
+                                subtitle: "\(completedHabits.count) completed"
+                            )
+                            
+                            ProgressStateView(
+                                state: .next,
+                                title: "Next review",
+                                subtitle: "on \(dateFormatter.string(from: Date().addingTimeInterval(86400)))"
+                            )
+                            
+                            ProgressStateView(
+                                state: .locked,
+                                title: "Review",
+                                subtitle: "on \(dateFormatter.string(from: Date().addingTimeInterval(86400 * 3)))"
+                            )
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemBackground))
+                    .cornerRadius(16)
+                    .shadow(radius: 2)
+                    .padding(.horizontal)
+                    
+                    // Info Card
+                    InfoCard(
+                        title: "Swipe to complete",
+                        message: "Swipe right on habits to mark them as complete",
+                        icon: "arrow.right.circle.fill"
+                    )
+                    .padding(.horizontal)
+                    
+                    // Habits List
+                    VStack(alignment: .leading, spacing: 16) {
+                        if !incompleteHabits.isEmpty {
+                            Text("Active Habits")
+                                .font(.title2)
+                                .bold()
+                                .padding(.horizontal)
+                            
                             ForEach(incompleteHabits) { habit in
                                 HabitRowView(
                                     habit: habit,
@@ -68,32 +148,48 @@ struct HabitListView: View {
                                     onSelect: { toggleSelection(habit) },
                                     onEdit: { editingHabit = habit }
                                 )
-                            }
-                            .onDelete { indexSet in
-                                for index in indexSet {
-                                    habitStore.deleteHabit(incompleteHabits[index])
+                                .padding(.horizontal)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(action: { completeHabit(habit) }) {
+                                        Label("Complete", systemImage: "checkmark")
+                                    }
+                                    .tint(.green)
                                 }
                             }
                         }
-                    }
-                    
-                    if !completedHabits.isEmpty {
-                        Section(header: Text("Completed Today")) {
+                        
+                        if !completedHabits.isEmpty {
+                            Text("Completed Today")
+                                .font(.title2)
+                                .bold()
+                                .padding(.horizontal)
+                                .padding(.top)
+                            
                             ForEach(completedHabits) { habit in
                                 CompletedHabitRowView(
                                     habit: habit,
                                     onEdit: { editingHabit = habit }
                                 )
+                                .padding(.horizontal)
+                                .swipeActions(edge: .trailing) {
+                                    Button(action: { uncompleteHabit(habit) }) {
+                                        Label("Uncomplete", systemImage: "xmark")
+                                    }
+                                    .tint(.red)
+                                }
                             }
                         }
                     }
                 }
+                .padding(.vertical)
             }
-            .navigationTitle("My Habits")
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle(dateFormatter.string(from: Date()).uppercased())
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingAddHabit = true }) {
-                        Image(systemName: "plus")
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
                     }
                 }
             }
@@ -102,6 +198,9 @@ struct HabitListView: View {
             }
             .sheet(item: $editingHabit) { habit in
                 EditHabitView(habitStore: habitStore, habit: habit)
+            }
+            .sheet(isPresented: $showingProfile) {
+                ProfileView(habitStore: habitStore)
             }
         }
     }
@@ -113,65 +212,111 @@ struct HabitListView: View {
             selectedHabits.insert(habit.id)
         }
     }
+    
+    private func completeHabit(_ habit: Habit) {
+        habitStore.toggleHabitCompletion(habit)
+    }
+    
+    private func uncompleteHabit(_ habit: Habit) {
+        habitStore.toggleHabitCompletion(habit)
+    }
 }
 
-struct CategoryButton: View {
+struct StatItem: View {
+    let icon: String
     let title: String
-    var color: Color = .blue
-    let isSelected: Bool
-    let action: () -> Void
+    let value: String
+    let iconColor: Color
     
-    private var emoji: String {
-        switch title {
-        case "Health": return "💪"
-        case "Productivity": return "⚡️"
-        case "Learning": return "📚"
-        case "Lifestyle": return "🌟"
-        case "Other": return "✨"
-        default: return "📋"
+    var body: some View {
+        VStack(spacing: 8) {
+            Circle()
+                .fill(Color(.systemGray5))
+                .frame(width: 48, height: 48)
+                .overlay(
+                    Image(systemName: icon)
+                        .font(.title2)
+                        .foregroundColor(iconColor)
+                )
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.title3)
+                .bold()
+        }
+    }
+}
+
+struct ProgressStateView: View {
+    enum State {
+        case done, next, locked
+    }
+    
+    let state: State
+    let title: String
+    let subtitle: String
+    
+    private var iconName: String {
+        switch state {
+        case .done: return "checkmark"
+        case .next: return "calendar"
+        case .locked: return "lock.fill"
+        }
+    }
+    
+    private var backgroundColor: Color {
+        switch state {
+        case .done: return .green
+        case .next: return .pink
+        case .locked: return Color(.systemGray4)
         }
     }
     
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Text(emoji)
-                Text(title)
-            }
-            .font(.subheadline)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(isSelected ? color : color.opacity(0.1))
-            )
-            .foregroundColor(isSelected ? .white : color)
+        VStack(spacing: 8) {
+            Circle()
+                .fill(backgroundColor.opacity(0.2))
+                .frame(width: 48, height: 48)
+                .overlay(
+                    Image(systemName: iconName)
+                        .font(.title2)
+                        .foregroundColor(backgroundColor)
+                )
+            Text(title)
+                .font(.subheadline)
+                .bold()
+            Text(subtitle)
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity)
     }
 }
 
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (1, 1, 1, 0)
+struct InfoCard: View {
+    let title: String
+    let message: String
+    let icon: String
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: "info.circle.fill")
+                .font(.title2)
+                .foregroundColor(.blue)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
         }
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue:  Double(b) / 255,
-            opacity: Double(a) / 255
-        )
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(radius: 2)
     }
 }

@@ -58,6 +58,13 @@ struct EditHabitView: View {
             }
             
             Section {
+                ActivityCalendarView(habit: habit)
+                    .listRowInsets(EdgeInsets())
+            } header: {
+                Text("Activity History")
+            }
+            
+            Section {
                 Button("Delete Habit", role: .destructive) {
                     showingDeleteAlert = true
                 }

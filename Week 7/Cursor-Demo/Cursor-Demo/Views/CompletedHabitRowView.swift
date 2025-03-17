@@ -15,17 +15,24 @@ struct CompletedHabitRowView: View {
     }
     
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.title2)
-                .foregroundColor(.green)
+        HStack(spacing: 16) {
+            Circle()
+                .fill(Color.green)
+                .frame(width: 24, height: 24)
+                .overlay(
+                    Image(systemName: "checkmark")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                )
             
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(categoryEmoji)
-                        .font(.title3)
+                HStack {
                     Text(habit.name)
                         .font(.headline)
+                        .strikethrough()
+                        .foregroundColor(.secondary)
+                    Text(categoryEmoji)
+                        .font(.subheadline)
                 }
                 
                 if !habit.description.isEmpty {
@@ -35,31 +42,24 @@ struct CompletedHabitRowView: View {
                 }
                 
                 HStack(spacing: 12) {
-                    Label(habit.category.rawValue, systemImage: "tag.fill")
+                    Label("\(habit.streak) day streak", systemImage: "flame.fill")
                         .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Label(habit.priority.rawValue, systemImage: "exclamationmark.circle.fill")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.orange)
                 }
             }
             
             Spacer()
             
             Button(action: onEdit) {
-                Image(systemName: "pencil.circle.fill")
-                    .font(.title2)
-                    .foregroundColor(.blue)
-                    .opacity(0.8)
+                Image(systemName: "ellipsis")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
             }
+            .buttonStyle(PlainButtonStyle())
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(hex: habit.color).opacity(0.1))
-        )
-        .contentShape(Rectangle())
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(radius: 1)
     }
 } 

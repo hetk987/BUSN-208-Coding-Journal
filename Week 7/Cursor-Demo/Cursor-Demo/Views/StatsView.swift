@@ -2,214 +2,166 @@ import SwiftUI
 
 struct StatsView: View {
     @ObservedObject var habitStore: HabitStore
-    let habit: Habit
     
     private let calendar = Calendar.current
-    @State private var selectedDate = Date()
+    private let daysToShow = 365
+    private let columns = 7
+    private let squareSize: CGFloat = 20
+    private let spacing: CGFloat = 4
     
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("Completion History")
-                    .font(.title)
-                    .padding(.horizontal)
-                
-                CalendarView(habit: habit, selectedDate: $selectedDate)
-                    .frame(height: 300)
-                    .padding()
-                
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Legend")
-                        .font(.headline)
-                    
-                    HStack(spacing: 20) {
-                        LegendItem(color: .green, text: "Completed")
-                        LegendItem(color: .red, text: "Missed")
-                        LegendItem(color: .gray.opacity(0.3), text: "Future")
-                    }
-                }
-                .padding(.horizontal)
-                
-                if let completionCount = habit.dailyCompletions[calendar.startOfDay(for: selectedDate)] {
-                    Text("Completions on \(selectedDate.formatted(date: .long, time: .omitted)): \(completionCount)")
-                        .font(.headline)
-                        .padding(.horizontal)
-                }
-            }
-        }
-        .navigationTitle("\(habit.name) Stats")
-    }
-}
-
-struct CalendarView: View {
-    let habit: Habit
-    @Binding var selectedDate: Date
-    
-    private let calendar = Calendar.current
-    private let daysInWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-    
-    private var monthTitle: String {
-        selectedDate.formatted(.dateTime.month().year())
-    }
-    
-    private var daysInMonth: [Date] {
-        let interval = DateInterval(start: startOfMonth(), end: endOfMonth())
-        return calendar.generateDates(inside: interval, matching: DateComponents(hour: 0, minute: 0, second: 0))
-    }
-    
-    private var firstWeekday: Int {
-        calendar.component(.weekday, from: startOfMonth()) - 1
-    }
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            HStack {
-                Button(action: previousMonth) {
-                    Image(systemName: "chevron.left")
-                }
-                
-                Text(monthTitle)
-                    .font(.title2)
-                    .frame(maxWidth: .infinity)
-                
-                Button(action: nextMonth) {
-                    Image(systemName: "chevron.right")
-                }
-            }
-            
-            HStack {
-                ForEach(daysInWeek, id: \.self) { day in
-                    Text(day)
-                        .frame(maxWidth: .infinity)
-                        .font(.caption)
-                }
-            }
-            
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 7), spacing: 8) {
-                ForEach(0..<firstWeekday, id: \.self) { _ in
-                    Color.clear
-                        .aspectRatio(1, contentMode: .fill)
-                }
-                
-                ForEach(daysInMonth, id: \.self) { date in
-                    DayCell(date: date, habit: habit, isSelected: calendar.isDate(date, inSameDayAs: selectedDate))
-                        .onTapGesture {
-                            selectedDate = date
-                        }
-                }
-            }
-        }
-    }
-    
-    private func startOfMonth() -> Date {
-        let components = calendar.dateComponents([.year, .month], from: selectedDate)
-        return calendar.date(from: components)!
-    }
-    
-    private func endOfMonth() -> Date {
-        let components = DateComponents(month: 1, day: -1)
-        return calendar.date(byAdding: components, to: startOfMonth())!
-    }
-    
-    private func previousMonth() {
-        if let newDate = calendar.date(byAdding: .month, value: -1, to: selectedDate) {
-            selectedDate = newDate
-        }
-    }
-    
-    private func nextMonth() {
-        if let newDate = calendar.date(byAdding: .month, value: 1, to: selectedDate) {
-            selectedDate = newDate
-        }
-    }
-}
-
-struct DayCell: View {
-    let date: Date
-    let habit: Habit
-    let isSelected: Bool
-    
-    private let calendar = Calendar.current
-    
-    private var isCompleted: Bool {
-        let startOfDay = calendar.startOfDay(for: date)
-        if habit.allowsMultipleCompletions {
-            return habit.dailyCompletions[startOfDay, default: 0] > 0
-        } else {
-            return habit.completionDates.contains(startOfDay)
-        }
-    }
-    
-    private var isMissed: Bool {
-        let startOfDay = calendar.startOfDay(for: date)
+    private var dates: [Date] {
         let today = calendar.startOfDay(for: Date())
-        return date < today && !isCompleted
-    }
-    
-    var body: some View {
-        Text("\(calendar.component(.day, from: date))")
-            .frame(maxWidth: .infinity)
-            .aspectRatio(1, contentMode: .fill)
-            .background(backgroundColor)
-            .foregroundColor(foregroundColor)
-            .clipShape(Circle())
-            .overlay(
-                Circle()
-                    .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
-            )
-    }
-    
-    private var backgroundColor: Color {
-        if isCompleted {
-            return .green
-        } else if isMissed {
-            return .red
-        } else if date > Date() {
-            return .gray.opacity(0.3)
-        }
-        return .clear
-    }
-    
-    private var foregroundColor: Color {
-        if isCompleted || isMissed {
-            return .white
-        }
-        return .primary
-    }
-}
-
-struct LegendItem: View {
-    let color: Color
-    let text: String
-    
-    var body: some View {
-        HStack {
-            Circle()
-                .fill(color)
-                .frame(width: 12, height: 12)
-            Text(text)
-                .font(.caption)
+        return (0..<daysToShow).compactMap { dayOffset in
+            calendar.date(byAdding: .day, value: -dayOffset, to: today)
         }
     }
-}
-
-extension Calendar {
-    func generateDates(inside interval: DateInterval, matching components: DateComponents) -> [Date] {
-        var dates: [Date] = []
-        dates.append(interval.start)
-        
-        enumerateDates(startingAfter: interval.start,
-                      matching: components,
-                      matchingPolicy: .nextTime) { date, _, stop in
-            if let date = date {
-                if date < interval.end {
-                    dates.append(date)
-                } else {
-                    stop = true
-                }
+    
+    private func completionCount(for date: Date) -> Int {
+        habitStore.habits.filter { habit in
+            if habit.allowsMultipleCompletions {
+                return habit.dailyCompletions[date, default: 0] > 0
+            } else {
+                return habit.completionDates.contains(date)
             }
+        }.count
+    }
+    
+    private func colorForCompletionCount(_ count: Int) -> Color {
+        switch count {
+        case 0: return Color(.systemGray6)
+        case 1: return Color(hex: "#9BE9A8")
+        case 2: return Color(hex: "#40C463")
+        case 3: return Color(hex: "#30A14E")
+        default: return Color(hex: "#216E39")
         }
-        
-        return dates
+    }
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Contribution Graph
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Activity")
+                            .font(.title2)
+                            .bold()
+                        
+                        HStack(alignment: .top, spacing: spacing) {
+                            ForEach(0..<columns, id: \.self) { column in
+                                VStack(spacing: spacing) {
+                                    ForEach(Array(dates.enumerated().filter { $0.offset % columns == column }), id: \.element) { _, date in
+                                        let count = completionCount(for: date)
+                                        Rectangle()
+                                            .fill(colorForCompletionCount(count))
+                                            .frame(width: squareSize, height: squareSize)
+                                            .cornerRadius(2)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Legend
+                        HStack(spacing: 16) {
+                            Text("Less")
+                            ForEach(0...4, id: \.self) { count in
+                                Rectangle()
+                                    .fill(colorForCompletionCount(count))
+                                    .frame(width: squareSize, height: squareSize)
+                                    .cornerRadius(2)
+                            }
+                            Text("More")
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.systemBackground))
+                    .cornerRadius(12)
+                    .shadow(radius: 2)
+                    
+                    // Statistics
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Statistics")
+                            .font(.title2)
+                            .bold()
+                        
+                        HStack {
+                            StatCard(
+                                title: "Total Habits",
+                                value: "\(habitStore.habits.count)",
+                                icon: "list.bullet",
+                                color: .blue
+                            )
+                            
+                            StatCard(
+                                title: "Completed Today",
+                                value: "\(habitStore.habits.filter { isHabitCompleted($0) }.count)",
+                                icon: "checkmark.circle",
+                                color: .green
+                            )
+                        }
+                        
+                        HStack {
+                            StatCard(
+                                title: "Streaks",
+                                value: "\(habitStore.habits.map { $0.streak }.max() ?? 0)",
+                                icon: "flame",
+                                color: .orange
+                            )
+                            
+                            StatCard(
+                                title: "Categories",
+                                value: "\(Set(habitStore.habits.map { $0.category }).count)",
+                                icon: "tag",
+                                color: .purple
+                            )
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemBackground))
+                    .cornerRadius(12)
+                    .shadow(radius: 2)
+                }
+                .padding()
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Statistics")
+        }
+    }
+    
+    private func isHabitCompleted(_ habit: Habit) -> Bool {
+        let today = calendar.startOfDay(for: Date())
+        if habit.allowsMultipleCompletions {
+            return habit.dailyCompletions[today, default: 0] > 0
+        } else {
+            return habit.completionDates.contains(today)
+        }
+    }
+}
+
+struct StatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            Text(value)
+                .font(.title)
+                .bold()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(color.opacity(0.1))
+        .cornerRadius(12)
     }
 } 
