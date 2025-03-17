@@ -66,12 +66,8 @@ struct HabitListView: View {
                                     habit: habit,
                                     isSelected: selectedHabits.contains(habit.id),
                                     onSelect: { toggleSelection(habit) },
-                                    onComplete: { habitStore.completeHabit(habit) }
+                                    onEdit: { editingHabit = habit }
                                 )
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    editingHabit = habit
-                                }
                             }
                             .onDelete { indexSet in
                                 for index in indexSet {
@@ -86,13 +82,8 @@ struct HabitListView: View {
                             ForEach(completedHabits) { habit in
                                 CompletedHabitRowView(
                                     habit: habit,
-                                    isSelected: selectedHabits.contains(habit.id),
-                                    onSelect: { toggleSelection(habit) }
+                                    onEdit: { editingHabit = habit }
                                 )
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    editingHabit = habit
-                                }
                             }
                         }
                     }
@@ -130,87 +121,32 @@ struct CategoryButton: View {
     let isSelected: Bool
     let action: () -> Void
     
+    private var emoji: String {
+        switch title {
+        case "Health": return "💪"
+        case "Productivity": return "⚡️"
+        case "Learning": return "📚"
+        case "Lifestyle": return "🌟"
+        case "Other": return "✨"
+        default: return "📋"
+        }
+    }
+    
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.subheadline)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? color : color.opacity(0.2))
-                .foregroundColor(isSelected ? .white : color)
-                .cornerRadius(20)
+            HStack(spacing: 6) {
+                Text(emoji)
+                Text(title)
+            }
+            .font(.subheadline)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(isSelected ? color : color.opacity(0.1))
+            )
+            .foregroundColor(isSelected ? .white : color)
         }
-    }
-}
-
-struct HabitRowView: View {
-    let habit: Habit
-    let isSelected: Bool
-    let onSelect: () -> Void
-    let onComplete: () -> Void
-    
-    var body: some View {
-        HStack {
-            Button(action: onSelect) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(Color(hex: habit.color))
-            }
-            
-            VStack(alignment: .leading) {
-                Text(habit.name)
-                    .font(.headline)
-                Text("Streak: \(habit.streak) days")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            if habit.allowsMultipleCompletions {
-                Text("\(habit.dailyCompletions[Calendar.current.startOfDay(for: Date()), default: 0])")
-                    .font(.title2)
-                    .foregroundColor(Color(hex: habit.color))
-            }
-            
-            Button(action: onComplete) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.title2)
-                    .foregroundColor(.green)
-            }
-        }
-        .padding(.vertical, 8)
-    }
-}
-
-struct CompletedHabitRowView: View {
-    let habit: Habit
-    let isSelected: Bool
-    let onSelect: () -> Void
-    
-    var body: some View {
-        HStack {
-            Button(action: onSelect) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(Color(hex: habit.color))
-            }
-            
-            VStack(alignment: .leading) {
-                Text(habit.name)
-                    .font(.headline)
-                if habit.allowsMultipleCompletions {
-                    Text("Completed \(habit.dailyCompletions[Calendar.current.startOfDay(for: Date()), default: 0]) times today")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-            }
-            
-            Spacer()
-            
-            Image(systemName: "checkmark.circle.fill")
-                .font(.title2)
-                .foregroundColor(.green)
-        }
-        .padding(.vertical, 8)
     }
 }
 
@@ -238,4 +174,4 @@ extension Color {
             opacity: Double(a) / 255
         )
     }
-} 
+}

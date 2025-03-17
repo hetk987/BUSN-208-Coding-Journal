@@ -7,7 +7,7 @@ struct Habit: Identifiable, Codable {
     var description: String
     var priority: Priority
     var streak: Int
-    var completionDates: [Date]
+    var completionDates: Set<Date>
     var reminderTime: Date?
     var allowsMultipleCompletions: Bool
     var dailyCompletions: [Date: Int]
@@ -38,7 +38,7 @@ struct Habit: Identifiable, Codable {
         }
     }
     
-    init(id: UUID = UUID(), name: String, description: String = "", priority: Priority = .medium, streak: Int = 0, completionDates: [Date] = [], reminderTime: Date? = nil, allowsMultipleCompletions: Bool = false, category: Category = .other, color: String? = nil) {
+    init(id: UUID = UUID(), name: String, description: String = "", priority: Priority = .medium, streak: Int = 0, completionDates: Set<Date> = [], reminderTime: Date? = nil, allowsMultipleCompletions: Bool = false, category: Category = .other, color: String? = nil) {
         self.id = id
         self.name = name
         self.description = description

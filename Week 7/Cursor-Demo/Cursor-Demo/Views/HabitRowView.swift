@@ -6,18 +6,28 @@ struct HabitRowView: View {
     let onSelect: () -> Void
     let onEdit: () -> Void
     
+    private var categoryEmoji: String {
+        switch habit.category {
+        case .health: return "💪"
+        case .productivity: return "⚡️"
+        case .learning: return "📚"
+        case .lifestyle: return "🌟"
+        case .other: return "✨"
+        }
+    }
+    
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
             Button(action: onSelect) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(isSelected ? .green : .gray)
+                    .font(.title2)
+                    .foregroundColor(Color(hex: habit.color))
             }
             
-            VStack(alignment: .leading) {
-                HStack {
-                    Circle()
-                        .fill(Color(hex: habit.color))
-                        .frame(width: 8, height: 8)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(categoryEmoji)
+                        .font(.title3)
                     Text(habit.name)
                         .font(.headline)
                 }
@@ -28,14 +38,12 @@ struct HabitRowView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                HStack {
-                    Text(habit.category.rawValue)
+                HStack(spacing: 12) {
+                    Label(habit.category.rawValue, systemImage: "tag.fill")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    Spacer()
-                    
-                    Text(habit.priority.rawValue)
+                    Label(habit.priority.rawValue, systemImage: "exclamationmark.circle.fill")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -44,11 +52,18 @@ struct HabitRowView: View {
             Spacer()
             
             Button(action: onEdit) {
-                Image(systemName: "pencil")
+                Image(systemName: "pencil.circle.fill")
+                    .font(.title2)
                     .foregroundColor(.blue)
+                    .opacity(0.8)
             }
         }
         .padding(.vertical, 8)
+        .padding(.horizontal, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(hex: habit.color).opacity(0.1))
+        )
         .contentShape(Rectangle())
     }
 } 
