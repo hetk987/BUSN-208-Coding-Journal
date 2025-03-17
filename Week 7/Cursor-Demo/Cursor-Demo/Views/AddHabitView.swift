@@ -10,6 +10,7 @@ struct AddHabitView: View {
     @State private var reminderTime = Date()
     @State private var hasReminder = false
     @State private var allowsMultipleCompletions = false
+    @State private var category = Habit.Category.other
     
     var body: some View {
         NavigationView {
@@ -21,6 +22,18 @@ struct AddHabitView: View {
                     Picker("Priority", selection: $priority) {
                         ForEach(Habit.Priority.allCases, id: \.self) { priority in
                             Text(priority.rawValue).tag(priority)
+                        }
+                    }
+                    
+                    Picker("Category", selection: $category) {
+                        ForEach(Habit.Category.allCases, id: \.self) { category in
+                            HStack {
+                                Circle()
+                                    .fill(Color(hex: category.defaultColor))
+                                    .frame(width: 12, height: 12)
+                                Text(category.rawValue)
+                            }
+                            .tag(category)
                         }
                     }
                 }
@@ -58,7 +71,8 @@ struct AddHabitView: View {
             description: description,
             priority: priority,
             reminderTime: hasReminder ? reminderTime : nil,
-            allowsMultipleCompletions: allowsMultipleCompletions
+            allowsMultipleCompletions: allowsMultipleCompletions,
+            category: category
         )
         
         habitStore.addHabit(habit)

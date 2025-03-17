@@ -3,92 +3,81 @@ import SwiftUI
 struct EditHabitView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var habitStore: HabitStore
-    let habit: Habit
+    @State var habit: Habit
     
-    @State private var name: String
-    @State private var description: String
-    @State private var priority: Habit.Priority
-    @State private var reminderTime: Date
-    @State private var hasReminder: Bool
-    @State private var allowsMultipleCompletions: Bool
-    
-    init(habitStore: HabitStore, habit: Habit) {
-        self.habitStore = habitStore
-        self.habit = habit
-        _name = State(initialValue: habit.name)
-        _description = State(initialValue: habit.description)
-        _priority = State(initialValue: habit.priority)
-        _reminderTime = State(initialValue: habit.reminderTime ?? Date())
-        _hasReminder = State(initialValue: habit.reminderTime != nil)
-        _allowsMultipleCompletions = State(initialValue: habit.allowsMultipleCompletions)
-    }
+    @State private var showingDeleteAlert = false
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Habit Details")) {
-                    TextField("Habit Name", text: $name)
-                    TextField("Description", text: $description)
-                    
-                    Picker("Priority", selection: $priority) {
-                        ForEach(Habit.Priority.allCases, id: \.self) { priority in
-                            Text(priority.rawValue).tag(priority)
+        Form {
+            Section(header: Text("Habit Details")) {
+                TextField("Habit Name", text: $habit.name)
+                TextField("Description", text: $habit.description)
+                
+                Picker("Priority", selection: $habit.priority) {
+                    ForEach(Habit.Priority.allCases, id: \.self) { priority in
+                        Text(priority.rawValue).tag(priority)
+                    }
+                }
+                
+                Picker("Category", selection: $habit.category) {
+                    ForEach(Habit.Category.allCases, id: \.self) { category in
+                        HStack {
+                            Circle()
+                                .fill(Color(hex: category.defaultColor))
+                                .frame(width: 12, height: 12)
+                            Text(category.rawValue)
                         }
-                    }
-                }
-                
-                Section(header: Text("Reminder")) {
-                    Toggle("Enable Reminder", isOn: $hasReminder)
-                    
-                    if hasReminder {
-                        DatePicker("Reminder Time",
-                                 selection: $reminderTime,
-                                 displayedComponents: .hourAndMinute)
-                    }
-                }
-                
-                Section(header: Text("Completion Settings")) {
-                    Toggle("Allow Multiple Completions per Day", isOn: $allowsMultipleCompletions)
-                }
-                
-                Section(header: Text("Statistics")) {
-                    HStack {
-                        Text("Current Streak")
-                        Spacer()
-                        Text("\(habit.streak) days")
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    HStack {
-                        Text("Total Completions")
-                        Spacer()
-                        Text("\(habit.completionDates.count)")
-                            .foregroundColor(.secondary)
+                        .tag(category)
                     }
                 }
             }
-            .navigationTitle("Edit Habit")
-            .navigationBarItems(
-                leading: Button("Cancel") {
-                    dismiss()
-                },
-                trailing: Button("Save") {
-                    saveHabit()
+            
+            Section(header: Text("Reminder")) {
+                if let reminderTime = habit.reminderTime {
+                    DatePicker("Reminder Time",
+                             selection: Binding(
+                                get: { reminderTime },
+                                set: { habit.reminderTime = $0 }
+                             ),
+                             displayedComponents: .hourAndMinute)
+                } else {
+                    Button("Add Reminder") {
+                        habit.reminderTime = Date()
+                    }
                 }
-                .disabled(name.isEmpty)
-            )
+                
+                if habit.reminderTime != nil {
+                    Button("Remove Reminder", role: .destructive) {
+                        habit.reminderTime = nil
+                    }
+                }
+            }
+            
+            Section(header: Text("Completion Settings")) {
+                Toggle("Allow Multiple Completions per Day", isOn: $habit.allowsMultipleCompletions)
+            }
+            
+            Section {
+                Button("Delete Habit", role: .destructive) {
+                    showingDeleteAlert = true
+                }
+            }
         }
-    }
-    
-    private func saveHabit() {
-        var updatedHabit = habit
-        updatedHabit.name = name
-        updatedHabit.description = description
-        updatedHabit.priority = priority
-        updatedHabit.reminderTime = hasReminder ? reminderTime : nil
-        updatedHabit.allowsMultipleCompletions = allowsMultipleCompletions
-        
-        habitStore.updateHabit(updatedHabit)
-        dismiss()
+        .navigationTitle("Edit Habit")
+        .navigationBarItems(
+            trailing: Button("Save") {
+                habitStore.updateHabit(habit)
+                dismiss()
+            }
+        )
+        .alert("Delete Habit", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                habitStore.deleteHabit(habit)
+                dismiss()
+            }
+        } message: {
+            Text("Are you sure you want to delete this habit? This action cannot be undone.")
+        }
     }
 } 

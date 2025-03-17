@@ -3,24 +3,17 @@ import UserNotifications
 
 class HabitStore: ObservableObject {
     @Published var habits: [Habit] = []
-    private let saveKey = "SavedHabits"
+    private let saveKey = "savedHabits"
     
     init() {
         loadHabits()
         requestNotificationPermission()
-        
-        #if DEBUG
-        if habits.isEmpty {
-            generateTestData()
-        }
-        #endif
     }
     
     private func loadHabits() {
-        if let data = UserDefaults.standard.data(forKey: saveKey) {
-            if let decoded = try? JSONDecoder().decode([Habit].self, from: data) {
-                habits = decoded
-            }
+        if let data = UserDefaults.standard.data(forKey: saveKey),
+           let decodedHabits = try? JSONDecoder().decode([Habit].self, from: data) {
+            habits = decodedHabits
         }
     }
     
@@ -50,23 +43,25 @@ class HabitStore: ObservableObject {
         cancelNotification(for: habit)
     }
     
-    func completeHabit(_ habit: Habit) {
+    func toggleHabitCompletion(_ habit: Habit) {
         if let index = habits.firstIndex(where: { $0.id == habit.id }) {
             var updatedHabit = habit
             let today = Calendar.current.startOfDay(for: Date())
             
-            if habit.allowsMultipleCompletions {
-                updatedHabit.dailyCompletions[today, default: 0] += 1
+            if updatedHabit.completionDates.contains(today) {
+                updatedHabit.completionDates.remove(today)
             } else {
-                if !habit.completionDates.contains(today) {
-                    updatedHabit.completionDates.append(today)
-                    updatedHabit.streak += 1
-                }
+                updatedHabit.completionDates.insert(today)
             }
             
             habits[index] = updatedHabit
             saveHabits()
         }
+    }
+    
+    func isHabitCompleted(_ habit: Habit) -> Bool {
+        let today = Calendar.current.startOfDay(for: Date())
+        return habit.completionDates.contains(today)
     }
     
     private func requestNotificationPermission() {
@@ -99,65 +94,4 @@ class HabitStore: ObservableObject {
     private func cancelNotification(for habit: Habit) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [habit.id.uuidString])
     }
-    
-    #if DEBUG
-    private func generateTestData() {
-        let calendar = Calendar.current
-        let today = Date()
-        
-        // Exercise Habit
-        var exerciseHabit = Habit(
-            name: "Exercise",
-            description: "30 minutes of physical activity",
-            priority: .high,
-            reminderTime: calendar.date(bySettingHour: 8, minute: 0, second: 0, of: today),
-            allowsMultipleCompletions: false
-        )
-        
-        // Add completion dates for the last 7 days
-        for dayOffset in 0..<7 {
-            if let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) {
-                exerciseHabit.completionDates.append(calendar.startOfDay(for: date))
-                exerciseHabit.streak += 1
-            }
-        }
-        
-        // Water Intake Habit
-        var waterHabit = Habit(
-            name: "Drink Water",
-            description: "Drink 8 glasses of water",
-            priority: .medium,
-            reminderTime: calendar.date(bySettingHour: 12, minute: 0, second: 0, of: today),
-            allowsMultipleCompletions: true
-        )
-        
-        // Add multiple completions for the last 3 days
-        for dayOffset in 0..<3 {
-            if let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) {
-                waterHabit.dailyCompletions[calendar.startOfDay(for: date)] = Int.random(in: 4...8)
-            }
-        }
-        
-        // Reading Habit
-        var readingHabit = Habit(
-            name: "Read",
-            description: "Read for 20 minutes",
-            priority: .low,
-            reminderTime: calendar.date(bySettingHour: 21, minute: 0, second: 0, of: today),
-            allowsMultipleCompletions: false
-        )
-        
-        // Add completion dates for the last 5 days
-        for dayOffset in 0..<5 {
-            if let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) {
-                readingHabit.completionDates.append(calendar.startOfDay(for: date))
-                readingHabit.streak += 1
-            }
-        }
-        
-        // Add the test habits
-        habits = [exerciseHabit, waterHabit, readingHabit]
-        saveHabits()
-    }
-    #endif
 } 
